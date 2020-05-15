@@ -10,7 +10,9 @@ list(REMOVE_ITEM SOURCES "${PROJECT_SOURCE_DIR}/src/mammut_pybind.cpp")
  
 set(LINK_DEPS "pthread ${PROJECT_SOURCE_DIR}/src/external/odroid-smartpower-linux/libsmartgauge.a ${PROJECT_SOURCE_DIR}/src/external/libusb-1.0.9/libusb/.libs/libusb-1.0.a")
 
-if (ENABLE_RAPLCAP)
+find_library(RAPLCAP libraplcap-msr.a)
+if (RAPLCAP-NOTFOUND)
+  if (ENABLE_RAPLCAP)
     add_definitions(-DHAVE_RAPLCAP)
     set(LINK_DEPS "${LINK_DEPS} ${PROJECT_BINARY_DIR}/external/${CMAKE_INSTALL_LIBDIR}/libraplcap-msr.a")
 
@@ -25,7 +27,10 @@ if (ENABLE_RAPLCAP)
         UPDATE_COMMAND ""
     )
     include_directories(${EXTERNAL_INSTALL_LOCATION}/include)
-endif (ENABLE_RAPLCAP)
+  endif (ENABLE_RAPLCAP)
+else (RAPLCAP-NOTFOUND) 
+  message(STATUS "RAPLCAP already found on the system")
+endif (RAPLCAP-NOTFOUND)
 
 ########
 # PAPI #
@@ -87,20 +92,20 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/mammut
         DESTINATION include)
 
 # Dynamic Library
-if (ENABLE_RAPLCAP)
+if ((ENABLE_RAPLCAP) AND (RAPLCAP-NOTFOUND))
     add_dependencies(mammut compile_ext raplcap_repo)
 else()
     add_dependencies(mammut compile_ext)
-endif(ENABLE_RAPLCAP)
+endif((ENABLE_RAPLCAP) AND (RAPLCAP-NOTFOUND))
 target_link_libraries(mammut ${LINK_DEPS})
 install(TARGETS mammut LIBRARY DESTINATION lib)
 
 # Static Library
-if (ENABLE_RAPLCAP)
+if ((ENABLE_RAPLCAP) AND (RAPLCAP-NOTFOUND))
     add_dependencies(mammut_static compile_ext raplcap_repo)
 else()
     add_dependencies(mammut_static compile_ext)
-endif (ENABLE_RAPLCAP)
+endif ((ENABLE_RAPLCAP) AND (RAPLCAP-NOTFOUND))
 
 target_link_libraries(mammut_static PRIVATE ${LINK_DEPS})
 install(TARGETS mammut_static ARCHIVE DESTINATION lib)
